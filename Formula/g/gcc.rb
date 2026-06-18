@@ -107,7 +107,7 @@ class Gcc < Formula
       args << "--build=#{cpu}-apple-darwin#{OS.kernel_version.major}"
 
       # System headers may not be in /usr/include
-      sdk = MacOS.sdk_path_if_needed
+      sdk = MacOS.sdk_path
       args << "--with-sysroot=#{sdk}" if sdk
 
       # Avoid this semi-random failure:
@@ -126,9 +126,6 @@ class Gcc < Formula
       inreplace "gcc/config/i386/t-linux64", "m64=../lib64", "m64="
       inreplace "gcc/config/aarch64/t-aarch64-linux", "lp64=../lib64", "lp64="
 
-      # Use our own (recent) binutils for as
-      args << "--with-as=#{Formula["binutils"].opt_bin}/as"
-
       ENV.append_path "CPATH", Formula["zlib-ng-compat"].opt_include
       ENV.append_path "LIBRARY_PATH", Formula["zlib-ng-compat"].opt_lib
     end
@@ -144,8 +141,8 @@ class Gcc < Formula
       # To make sure GCC does not record cellar paths, we configure it with
       # opt_prefix as the prefix. Then we use DESTDIR to install into a
       # temporary location, then move into the cellar path.
-      system "gmake", install_target, "DESTDIR=#{Pathname.pwd}/../instdir"
-      mv Dir[Pathname.pwd/"../instdir/#{opt_prefix}/*"], prefix
+      system "gmake", install_target, "DESTDIR=#{buildpath}/instdir"
+      prefix.install buildpath.glob("instdir/#{opt_prefix}/*")
     end
 
     bin.install_symlink bin/"gfortran-#{version_suffix}" => "gfortran"
@@ -155,8 +152,15 @@ class Gcc < Formula
     # We need to create `lib/gcc/xy` as a directory and not a symlink to avoid `brew link` conflicts.
     (lib/"gcc"/version_suffix).install_symlink (lib/"gcc/current").children
 
-    # Only the newest brewed gcc should install gfortan libs as we can only have one.
-    lib.install_symlink lib.glob("gcc/current/libgfortran.*") if OS.linux?
+    if OS.linux?
+      # Only the newest brewed gcc should install gfortan libs as we can only have one.
+      lib.install_symlink lib.glob("gcc/current/libgfortran.*")
+
+      # Use our own (recent) binutils for as. We add a symlink rather than
+      # configure `--with-as=` in order to build a relocatable Linux bottle
+      as_dir = Pathname(Utils.safe_popen_read(bin/"gcc-#{version_suffix}", "-print-prog-name=cc1")).parent
+      ln_sf (Formula["binutils"].opt_bin/"as").relative_path_from(as_dir), as_dir
+    end
 
     # Handle conflicts between GCC formulae and avoid interfering
     # with system compilers.
