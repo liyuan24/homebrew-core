@@ -45,6 +45,21 @@ if [[ ! -f "${FORMULA_PATH}" ]]; then
   exit 1
 fi
 
+CORE_REPO="$(brew --repo homebrew/core)"
+CURRENT_REPO="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [[ "${CURRENT_REPO}" != "${CORE_REPO}" ]]; then
+  echo "This script must run from Homebrew's installed homebrew/core tap checkout." >&2
+  echo "Current repo: ${CURRENT_REPO}" >&2
+  echo "Core tap:     ${CORE_REPO}" >&2
+  echo >&2
+  echo "Use:" >&2
+  echo "  cd \"\$(brew --repo homebrew/core)\"" >&2
+  echo "  git fetch https://github.com/liyuan24/homebrew-core.git wattle-formula" >&2
+  echo "  git switch -C wattle-formula FETCH_HEAD" >&2
+  echo "  scripts/test-wattle-formula.sh" >&2
+  exit 1
+fi
+
 run() {
   printf '\n==> %s\n' "$*"
   "$@"
@@ -59,7 +74,7 @@ run brew install --build-from-source "./${FORMULA_PATH}"
 run wattle --version
 run wattle --help
 run brew test "${FORMULA_NAME}"
-run brew audit --new --strict --online "./${FORMULA_PATH}"
+run brew audit --new --strict --online "${FORMULA_NAME}"
 
 if [[ "${UNINSTALL}" -eq 1 ]]; then
   run brew uninstall "${FORMULA_NAME}"
