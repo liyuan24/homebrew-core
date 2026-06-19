@@ -59,7 +59,7 @@ run brew install --build-from-source "./${FORMULA_PATH}"
 run wattle --version
 run wattle --help
 run brew test "${FORMULA_NAME}"
-run brew audit --new --strict --online "${FORMULA_NAME}"
+run brew audit --new --strict --online "./${FORMULA_PATH}"
 
 if [[ "${UNINSTALL}" -eq 1 ]]; then
   run brew uninstall "${FORMULA_NAME}"

@@ -10,8 +10,8 @@ class Wattle < Formula
   depends_on "rust" => :build # for uv-build backend and jiter
 
   depends_on "certifi" => :no_linkage
-  depends_on "pydantic" => :no_linkage
   depends_on "portaudio"
+  depends_on "pydantic" => :no_linkage
   depends_on "python@3.14"
 
   pypi_packages exclude_packages: %w[certifi pydantic],
