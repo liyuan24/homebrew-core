@@ -70,7 +70,11 @@ export HOMEBREW_DEVELOPER=1
 
 run ruby -c "${FORMULA_PATH}"
 run brew style --fix "${FORMULA_PATH}"
-run brew install --build-from-source "./${FORMULA_PATH}"
+if brew list --formula "${FORMULA_NAME}" >/dev/null 2>&1; then
+  run brew reinstall --build-from-source "${FORMULA_NAME}"
+else
+  run brew install --build-from-source "${FORMULA_NAME}"
+fi
 run wattle --version
 run wattle --help
 run brew test "${FORMULA_NAME}"
